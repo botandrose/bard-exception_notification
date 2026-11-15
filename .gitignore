@@ -4,3 +4,5 @@
 /Gemfile.lock
 .rspec_status
 /gemfiles/*.lock
+/.ruby-version
+/.ruby-gemset
