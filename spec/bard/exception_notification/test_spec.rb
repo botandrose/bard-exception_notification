@@ -49,6 +49,19 @@ RSpec.describe Bard::ExceptionNotification::Test do
   describe "exception_notification:test:job" do
     include ActiveJob::TestHelper
 
+    it "uses ActiveJob::Base in an app without an ApplicationJob" do
+      hide_const("ApplicationJob")
+      hide_const("Bard::ExceptionNotification::TestJob")
+
+      load File.expand_path("../../../app/jobs/bard/exception_notification/test_job.rb", __dir__)
+
+      expect(Bard::ExceptionNotification::TestJob.superclass).to eq ActiveJob::Base
+    end
+
+    it "inherits the app's ApplicationJob, and so its retries" do
+      expect(Bard::ExceptionNotification::TestJob.superclass).to eq ApplicationJob
+    end
+
     it "enqueues a job that fails and sends a notification" do
       expect { Rake::Task["exception_notification:test:job"].execute }.to output(/job: enqueued/).to_stdout
       expect(enqueued_jobs.map { _1["job_class"] }).to eq ["Bard::ExceptionNotification::TestJob"]

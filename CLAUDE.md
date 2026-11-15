@@ -22,7 +22,7 @@ A Rails engine gem that gives every BARD-managed Rails app the same exception_no
   - When `Delayed::Worker` is loaded, `DelayedJobNotification` is prepended to it in `after_initialize`, and it notifies only once delayed_job gives up on a job (`job.attempts >= max_attempts(job)` after `super` has rescheduled it).
   - The test route is prepended with a constraint on `Test::ENV_KEY`, an env key set only in-process, so it can't be reached over HTTP.
 - `lib/bard/exception_notification/test.rb` + `lib/tasks/exception_notification.rake` implement the end-to-end check. `Test.web` drives `Rails.application.call` with a mock request and inspects `exception_notifier.delivered`. It sets `ExceptionNotifier.testing_mode = true` so delivery failures raise instead of being only logged. The `test` task runs `web`, `job`, and `rake`, and exits 0 when all three succeed. A rake notification needs an exception to escape a task, so `Test.rake` runs the hidden `exception_notification:test:raise` task in a child `bin/rails` process. That task registers a last `:bard_test_sent` lambda notifier, which prints `Test::SENT_MARKER` only if the notifiers before it delivered without raising. The parent then checks the child's output for that marker. When `Delayed::Job` exists, the job check also enqueues `TestDelayedJob`, a plain delayed_job payload with `max_attempts` 1, so its notification doesn't wait out the app's retries. It replaces the ActiveJob check when ActiveJob runs on delayed_job.
-- `app/` holds the engine's `TestsController` and `TestJob` (which inherits the host's `::ApplicationJob`).
+- `app/` holds the engine's `TestsController` and `TestJob` (which inherits the host's `::ApplicationJob`, or `ActiveJob::Base` in an app without one).
 
 ## Specs
 
