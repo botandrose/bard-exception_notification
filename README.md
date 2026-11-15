@@ -41,7 +41,7 @@ The defaults are applied before the app's own initializers, so an initializer ca
 ```ruby
 # config/initializers/exception_notification.rb
 ExceptionNotification.configure do |config|
-  config.ignored_exceptions += %w[ActiveRecord::RecordNotFound]
+  config.ignored_exceptions += %w[MyApp::ExpectedError]
   config.add_notifier :email, Bard::ExceptionNotification.email_options.merge(exception_recipients: "team@example.com")
 end
 ```
@@ -65,6 +65,7 @@ The web and rake checks raise if the notification can't be delivered, instead of
 ```sh
 bundle install
 bundle exec rspec
+bundle exec appraisal install && bundle exec appraisal rspec   # every supported Rails version
 ```
 
 ## License

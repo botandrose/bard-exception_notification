@@ -10,6 +10,7 @@ A Rails engine gem that gives every BARD-managed Rails app the same exception_no
 
 - Full suite (fast, under a second): `bundle exec rspec` (also `bundle exec rake`)
 - Single file / example: `bundle exec rspec spec/bard/exception_notification_spec.rb:42`
+- Rails matrix (as CI runs it, Ruby 3.2–4.0 × Rails 7.2/8.0/8.1): `bundle exec appraisal install`, then `bundle exec appraisal rails-7.2 rspec`
 
 ## Architecture
 
