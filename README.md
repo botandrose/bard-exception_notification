@@ -56,9 +56,9 @@ This runs three checks in order:
 
 - `exception_notification:test:web` sends a request through the app's middleware stack to a test page that raises, then fails unless a notification was delivered. The page is reachable only from this task, never over HTTP. The request uses the host from `Rails.application.default_url_options`, so that host must be allowed by `config.hosts`.
 - `exception_notification:test:job` enqueues a job that raises. Its notification is sent once a worker runs the job and any retries configured by `ApplicationJob` are exhausted.
-- `exception_notification:test:rake` raises from the task itself, so the task exits with a failure after sending its notification.
+- `exception_notification:test:rake` runs `bin/rails exception_notification:test:raise` in a child process, which fails by raising so that its notification goes out, and then checks that the notification was sent.
 
-The web and rake checks raise if the notification can't be delivered, instead of only logging the failure.
+The command exits 0 once the web and rake notifications are sent and the job is enqueued. The web and rake checks fail if a notification is ignored or can't be delivered, instead of only logging the failure.
 
 ## Development
 

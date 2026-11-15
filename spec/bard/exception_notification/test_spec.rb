@@ -58,15 +58,55 @@ RSpec.describe Bard::ExceptionNotification::Test do
     end
   end
 
-  describe "exception_notification:test:rake" do
-    it "fails the task and sends a notification" do
-      expect { Rake::Task["exception_notification:test:rake"].execute }.to raise_error(Bard::ExceptionNotification::TestError, /from rake/)
+  describe "exception_notification:test:raise, which test:rake runs in a child process" do
+    after { ExceptionNotifier.unregister_exception_notifier(:bard_test_sent) }
+
+    it "fails the task, sends a notification and says so" do
+      expect {
+        expect { Rake::Task["exception_notification:test:raise"].execute }.to raise_error(Bard::ExceptionNotification::TestError, /from rake/)
+      }.to output("exception_notification: sent\n").to_stderr
 
       expect(deliveries.size).to eq 1
     end
+
+    it "doesn't say so when the notification is ignored" do
+      allow(Rails).to receive(:env).and_return(ActiveSupport::EnvironmentInquirer.new("staging"))
+
+      expect {
+        expect { Rake::Task["exception_notification:test:raise"].execute }.to raise_error(Bard::ExceptionNotification::TestError)
+      }.not_to output.to_stderr
+    end
+
+    it "doesn't say so when the notification can't be delivered" do
+      allow_any_instance_of(ExceptionNotifier::EmailNotifier).to receive(:call).and_raise(Errno::ECONNREFUSED)
+
+      expect {
+        expect { Rake::Task["exception_notification:test:raise"].execute }.to raise_error(Errno::ECONNREFUSED)
+      }.not_to output.to_stderr
+    end
+
+    it "is left out of rake -T" do
+      expect(Rake::Task["exception_notification:test:raise"].comment).to be_nil
+    end
   end
 
-  it "runs the web and job checks before the rake one, which aborts" do
+  describe "exception_notification:test:rake" do
+    it "succeeds when the child task's notification was sent" do
+      allow(Open3).to receive(:capture2e)
+        .with(Rails.root.join("bin/rails").to_s, "exception_notification:test:raise", chdir: Rails.root.to_s)
+        .and_return(["exception_notification: sent\nrake aborted!\n", instance_double(Process::Status)])
+
+      expect { Rake::Task["exception_notification:test:rake"].execute }.to output("rake: sent a Bard::ExceptionNotification::TestError notification from a failing rake task\n").to_stdout
+    end
+
+    it "fails with the child task's output when its notification wasn't sent" do
+      allow(Open3).to receive(:capture2e).and_return(["rake aborted!\nErrno::ECONNREFUSED: Connection refused\n", instance_double(Process::Status)])
+
+      expect { Rake::Task["exception_notification:test:rake"].execute }.to raise_error(/notification was not sent:\nrake aborted!\nErrno::ECONNREFUSED/)
+    end
+  end
+
+  it "runs the web, job and rake checks" do
     expect(Rake::Task["exception_notification:test"].prerequisites).to eq %w[test:web test:job test:rake]
   end
 end

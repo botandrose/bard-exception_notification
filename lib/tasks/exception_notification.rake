@@ -15,9 +15,13 @@ namespace :exception_notification do
       Bard::ExceptionNotification::Test.job
     end
 
-    desc "Send a test exception notification from a rake task"
+    desc "Send a test exception notification from a rake task that fails"
     task rake: :environment do
       Bard::ExceptionNotification::Test.rake
+    end
+
+    task raise: :environment do
+      Bard::ExceptionNotification::Test.raise_from_rake
     end
   end
 end
