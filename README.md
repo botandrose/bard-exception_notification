@@ -4,6 +4,7 @@ Shared [exception_notification](https://rubygems.org/gems/exception_notification
 
 - web requests
 - ActiveJob jobs, once retries are exhausted (discarded jobs send nothing)
+- delayed_job jobs, once delayed_job gives up on them, when the app uses delayed_job
 - rake tasks, including unknown task names
 - `ActionController::Live` actions that raise after the response has started streaming
 
@@ -31,7 +32,7 @@ exception_notification_smtp_settings:
 
 - Emails go to `micah@botandrose.com` from `errors@bardtracker.com`, with the app's directory name as the subject prefix, e.g. `[myapp] `.
 - Notifications are sent only in production.
-- Common noise is ignored: `ActionController::InvalidAuthenticityToken`, `ActionView::MissingTemplate`, `ActionController::BadRequest`, `ActionDispatch::Http::Parameters::ParseError`, `Mime::Type::InvalidMimeType`, `URI::InvalidComponentError` and `Addressable::URI::InvalidURIError`.
+- Common noise is ignored: `ActionController::InvalidAuthenticityToken`, `ActionView::MissingTemplate`, `ActionController::BadRequest`, `ActionDispatch::Http::Parameters::ParseError`, `Mime::Type::InvalidMimeType`, `URI::InvalidComponentError`, `Addressable::URI::InvalidURIError`, and requests that fail with `invalid byte sequence in UTF-8`.
 - Cookies, the `Authorization` header and the session are kept out of emails. They are added to `filter_parameters`, and the session section is left out.
 
 ## Customizing

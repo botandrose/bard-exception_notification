@@ -35,6 +35,21 @@ module Bard
       end
     end
 
+    module DelayedJobNotification
+      protected
+
+      def handle_failed_job(job, error)
+        super
+        return if job.attempts < max_attempts(job)
+        ExceptionNotifier.notify_exception(error, data: {
+          job_name: job.name,
+          job_id: job.id,
+          queue: job.queue,
+          attempts: job.attempts,
+        })
+      end
+    end
+
     module UnknownTaskNotification
       def invoke_task(task_string)
         super

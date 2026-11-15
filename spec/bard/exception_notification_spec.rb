@@ -34,6 +34,12 @@ RSpec.describe Bard::ExceptionNotification do
 
       expect(deliveries).to be_empty
     end
+
+    it "ignores requests with invalid UTF-8" do
+      request "/bad_utf8"
+
+      expect(deliveries).to be_empty
+    end
   end
 
   describe "app initializers" do

@@ -6,6 +6,19 @@ module Bard
   module ExceptionNotification
     class TestError < StandardError; end
 
+    # Not an ActiveJob, so it can give up after one attempt instead of the app's Delayed::Worker.max_attempts.
+    class TestDelayedJob
+      def initialize(message)
+        @message = message
+      end
+
+      def perform
+        raise TestError, @message
+      end
+
+      def max_attempts = 1
+    end
+
     module Test
       # Set only in-process, so no HTTP request can reach the test page.
       ENV_KEY = "bard.exception_notification.test"
@@ -28,8 +41,18 @@ module Bard
       end
 
       def job
-        TestJob.perform_later(message("job"))
-        puts "job: enqueued #{TestJob}; its notification is sent once the job fails for good, after any retries ApplicationJob configures"
+        if TestJob.queue_adapter.class.name == "ActiveJob::QueueAdapters::DelayedJobAdapter"
+          puts "job: ActiveJob runs on delayed_job here, so the delayed_job check below covers it"
+        else
+          TestJob.perform_later(message("job"))
+          puts "job: enqueued #{TestJob}; its notification is sent once the job fails for good, after any retries ApplicationJob configures"
+        end
+        delayed_job if defined?(::Delayed::Job)
+      end
+
+      def delayed_job
+        ::Delayed::Job.enqueue(TestDelayedJob.new(message("delayed_job")))
+        puts "delayed_job: enqueued #{TestDelayedJob}, which gives up after one attempt, so its notification is sent as soon as a worker runs it"
       end
 
       # A rake notification needs an exception to escape a task, so it's raised in a child process to let this one exit 0.

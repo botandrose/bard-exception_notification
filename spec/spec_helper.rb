@@ -7,6 +7,7 @@ require "action_controller/railtie"
 require "action_mailer/railtie"
 require "active_job/railtie"
 require "rake"
+require "delayed_job"
 require "bard-exception_notification"
 
 # Every bard app loads bard-rake, whose Bard::Rake shadows ::Rake inside module Bard.
@@ -29,6 +30,7 @@ module Dummy
     routes.append do
       get "/boom", to: "boom#show"
       get "/login", to: "boom#login"
+      get "/bad_utf8", to: "boom#bad_utf8"
     end
   end
 end
@@ -37,6 +39,10 @@ class BoomController < ActionController::Base
   def show
     session[:user_credentials]
     raise "boom"
+  end
+
+  def bad_utf8
+    raise ArgumentError, "invalid byte sequence in UTF-8"
   end
 
   def login
